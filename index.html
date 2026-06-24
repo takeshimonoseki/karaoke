@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="歌ノート">
+  <title>歌ノート</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=1.0.3">
+</head>
+<body>
+  <header class="app-header">
+    <div class="title-row">
+      <div>
+        <h1>歌ノート</h1>
+        <p id="songCount" class="count">0曲</p>
+      </div>
+      <div class="title-actions">
+        <button id="openSearchButton" type="button" class="mini-search-button">検索</button>
+        <button id="menuButton" class="icon-button" aria-label="設定">•••</button>
+      </div>
+    </div>
+
+    <nav class="tab-bar" role="tablist" aria-label="リスト切り替え">
+      <button id="tabCanSing" class="tab-button active" type="button" role="tab" data-tab="canSing" aria-selected="true" aria-controls="songList">歌える曲</button>
+      <button id="tabCannotSing" class="tab-button" type="button" role="tab" data-tab="cannotSing" aria-selected="false" aria-controls="songList">歌いたい曲</button>
+    </nav>
+
+    <div class="search-wrap local-search">
+      <span aria-hidden="true">⌕</span>
+      <input id="searchInput" type="search" inputmode="search"
+             placeholder="マイリスト内を絞り込み" autocomplete="off">
+      <button id="clearSearchButton" class="clear-button" aria-label="検索を消す">×</button>
+    </div>
+
+    <div class="toolbar">
+      <select id="sortSelect" aria-label="並び順">
+        <option value="manual">自分の順番</option>
+        <option value="title">曲名順</option>
+        <option value="artist">歌手名順</option>
+        <option value="favorite">お気に入り順</option>
+        <option value="singCount">よく歌う順</option>
+        <option value="lastSung">最近歌った順</option>
+        <option value="newest">新しく登録した順</option>
+      </select>
+      <button id="reorderButton" class="secondary-button">順番変更</button>
+      <button id="randomButton" class="secondary-button">1曲選ぶ</button>
+    </div>
+    <p id="reorderHint" class="reorder-hint" hidden>↑↓で並べ替え中</p>
+  </header>
+
+  <main>
+    <div id="recoveryBanner" class="recovery-banner" hidden>
+      <p>曲データの読み込みに問題がありました。バックアップから復旧するか、サンプル曲をお試しください。</p>
+      <div class="recovery-banner-actions">
+        <button id="recoveryImportButton" type="button" class="secondary-button">バックアップを読み込む</button>
+      </div>
+    </div>
+    <section id="emptyState" class="empty-state" hidden>
+      <p id="emptyMessage">曲がありません。</p>
+      <button id="openSearchFromEmptyButton" class="primary-button">検索から曲を追加</button>
+    </section>
+    <section id="songList" class="song-list" aria-live="polite" role="tabpanel" aria-label="曲リスト"></section>
+  </main>
+
+  <dialog id="searchDialog" class="search-dialog" aria-labelledby="searchDialogTitle">
+    <div class="search-dialog-inner" id="searchDialogInner">
+      <header class="search-dialog-header">
+        <button id="closeSearchButton" type="button" class="icon-button" aria-label="閉じる">×</button>
+        <h2 id="searchDialogTitle">検索</h2>
+        <span class="search-dialog-spacer" aria-hidden="true"></span>
+      </header>
+
+      <div class="search-dialog-toolbar" id="searchDialogToolbar">
+        <div class="search-toolbar-row search-toolbar-primary">
+          <nav class="search-gender-bar" aria-label="歌手の性別">
+            <span class="search-gender-label">歌手</span>
+            <button id="searchGenderAll" type="button" class="search-gender-button active" data-gender="">両方</button>
+            <button id="searchGenderMale" type="button" class="search-gender-button" data-gender="male">男性</button>
+            <button id="searchGenderFemale" type="button" class="search-gender-button" data-gender="female">女性</button>
+          </nav>
+          <nav class="browse-mode-bar" aria-label="探し方">
+            <button type="button" class="browse-mode-button active" data-mode="ranking">ランキング</button>
+            <button type="button" class="browse-mode-button" data-mode="foryou">俺向け</button>
+            <button type="button" class="browse-mode-button" data-mode="keyword">キーワード</button>
+          </nav>
+        </div>
+
+        <details id="browseFilterDetails" class="browse-filter-details">
+          <summary class="browse-filter-summary">年代・ジャンル</summary>
+          <div id="browseFilterPanel" class="browse-filter-panel">
+            <div class="browse-filter-row" id="browseAgeFilterRow">
+              <span class="browse-filter-label">年代</span>
+              <div id="browseAgeNav" class="browse-subnav" aria-label="年代"></div>
+            </div>
+            <div class="browse-filter-row">
+              <span class="browse-filter-label">ジャンル</span>
+              <div id="browseGenreNav" class="browse-subnav" aria-label="ジャンル"></div>
+            </div>
+          </div>
+        </details>
+
+        <div class="search-wrap karaoke-search" id="keywordSearchWrap" hidden>
+          <span aria-hidden="true">⌕</span>
+          <input id="globalSearchInput" type="search" inputmode="search"
+                 placeholder="曲名・歌手名（歌手名で曲を一覧）" autocomplete="off">
+        </div>
+        <div id="searchSuggestions" class="search-suggestions" hidden></div>
+
+        <div class="search-toolbar-row search-toolbar-meta">
+          <div class="add-target-bar" role="group" aria-label="追加先">
+            <span class="add-target-label">追加先</span>
+            <button id="addTargetCanSing" type="button" class="add-target-button active" data-target="canSing">歌える曲</button>
+            <button id="addTargetCannotSing" type="button" class="add-target-button" data-target="cannotSing">歌いたい曲</button>
+          </div>
+          <div id="browseSortBar" class="browse-sort-bar" hidden>
+            <span class="browse-filter-label">並び順</span>
+            <select id="browseSortSelect" class="browse-sort-select" aria-label="並び順">
+              <option value="ranking">人気順</option>
+              <option value="title">曲名順</option>
+              <option value="artist">歌手名順</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <section class="search-dialog-results" aria-label="検索結果">
+        <p id="globalSearchStatus" class="global-search-status">曲名や歌手名を入力してください</p>
+        <div id="globalSearchResults" class="karaoke-results"></div>
+        <button id="loadMoreBrowseButton" type="button" class="load-more-button" hidden>もっと見る</button>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="editDialog" aria-labelledby="dialogTitle">
+    <form id="songForm" method="dialog" class="dialog-card">
+      <div class="dialog-header">
+        <h2 id="dialogTitle">曲を編集</h2>
+        <button id="closeDialogButton" type="button" class="icon-button" aria-label="閉じる">×</button>
+      </div>
+
+      <input id="songId" type="hidden">
+
+      <div class="song-readonly">
+        <p id="readonlyTitle" class="readonly-title"></p>
+        <p id="readonlyArtist" class="readonly-artist"></p>
+      </div>
+
+      <label>
+        リスト
+        <select id="listTypeInput">
+          <option value="canSing">歌える曲</option>
+          <option value="cannotSing">歌いたい曲</option>
+        </select>
+      </label>
+
+      <div class="two-columns">
+        <div class="key-picker-group">
+          <span class="key-picker-label">キー</span>
+          <input type="hidden" id="keyInput">
+          <div class="key-picker-buttons" id="keyPickerButtons">
+            <button type="button" class="key-btn" data-key="">原曲</button>
+            <button type="button" class="key-btn" data-key="-5">-5</button>
+            <button type="button" class="key-btn" data-key="-4">-4</button>
+            <button type="button" class="key-btn" data-key="-3">-3</button>
+            <button type="button" class="key-btn" data-key="-2">-2</button>
+            <button type="button" class="key-btn" data-key="-1">-1</button>
+            <button type="button" class="key-btn" data-key="+1">+1</button>
+            <button type="button" class="key-btn" data-key="+2">+2</button>
+            <button type="button" class="key-btn" data-key="+3">+3</button>
+            <button type="button" class="key-btn" data-key="+4">+4</button>
+            <button type="button" class="key-btn" data-key="+5">+5</button>
+          </div>
+        </div>
+        <label>
+          タグ
+          <input id="tagInput" maxlength="50" placeholder="バラード、洋楽など">
+        </label>
+      </div>
+
+      <label>
+        メモ
+        <textarea id="memoInput" maxlength="300" placeholder="歌い出し、高音の注意など"></textarea>
+      </label>
+
+      <div id="singStats" class="sing-stats" hidden>
+        <p id="singStatsSummary" class="sing-stats-summary"></p>
+        <ul id="singHistoryList" class="sing-history-list"></ul>
+      </div>
+
+      <div class="favorite-check">
+        <input id="favoriteInput" type="checkbox">
+        <label for="favoriteInput">お気に入りにする（★）</label>
+      </div>
+
+      <button type="button" id="moveToCanSingButton" class="move-to-can-button" hidden>歌える曲に移す</button>
+
+      <div class="dialog-actions">
+        <button id="deleteButton" type="button" class="danger-button">削除</button>
+        <button type="button" id="cancelButton" class="secondary-button">キャンセル</button>
+        <button type="submit" class="primary-button">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="menuDialog" aria-labelledby="menuDialogTitle">
+    <div class="dialog-card compact">
+      <div class="dialog-header">
+        <h2 id="menuDialogTitle">設定</h2>
+        <button id="closeMenuButton" type="button" class="icon-button" aria-label="閉じる">×</button>
+      </div>
+      <button id="exportButton" class="menu-item">バックアップを書き出す</button>
+      <button id="importButton" class="menu-item">バックアップを読み込む</button>
+      <button id="restoreAutoBackupButton" type="button" class="menu-item" hidden>自動バックアップから復元</button>
+      <p id="autoBackupStatus" class="small-note">自動バックアップ: 準備中…</p>
+      <button id="loadSampleButton" type="button" class="menu-item">サンプル曲を入れる（約60曲）</button>
+      <input id="importFile" type="file" accept=".json,application/json" hidden>
+      <p class="small-note">データはこの端末内に保存されます。変更は自動で最大5世代まで端末内に退避します。機種変更時は「バックアップを書き出す」を使ってください。</p>
+      <p id="appVersionNote" class="small-note version-note"></p>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>window.INITIAL_SONGS = [{"title":"ペガサス幻想","artist":"MAKE-UP"},{"title":"愛をとりもどせ!!","artist":"クリスタルキング"},{"title":"ライラック","artist":"Mrs. GREEN APPLE"},{"title":"青と夏","artist":"Mrs. GREEN APPLE"},{"title":"翼を広げて","artist":"DEEN"},{"title":"永遠をあずけてくれ","artist":"DEEN"},{"title":"瞳そらさないで","artist":"DEEN"},{"title":"このまま君だけを奪い去りたい","artist":"DEEN"},{"title":"カレンダー","artist":"川崎鷹也"},{"title":"僕と僕","artist":"川崎鷹也"},{"title":"サクラウサギ","artist":"川崎鷹也"},{"title":"君の為のキミノウタ","artist":"川崎鷹也"},{"title":"魔法の絨毯","artist":"川崎鷹也"},{"title":"READY STEADY GO","artist":"L'Arc-en-Ciel"},{"title":"カーテンコール","artist":"優里"},{"title":"レオ","artist":"優里"},{"title":"恋人じゃなくなった日","artist":"優里"},{"title":"かくれんぼ","artist":"優里"},{"title":"ベテルギウス","artist":"優里"},{"title":"ドライフラワー","artist":"優里"},{"title":"ピーターパン","artist":"優里"},{"title":"TOUGH BOY","artist":"TOM・CAT"},{"title":"Lemon","artist":"米津玄師"},{"title":"母へ","artist":"半崎美子"},{"title":"別の人の彼女になったよ","artist":"wacci"},{"title":"君がドアを閉めた後","artist":"back number"},{"title":"わたがし","artist":"back number"},{"title":"花束","artist":"back number"},{"title":"CITRUS","artist":"Da-iCE"},{"title":"離したくはない","artist":"T-BOLAN"},{"title":"Bye For Now","artist":"T-BOLAN"},{"title":"Slave to the Grind","artist":"Skid Row"},{"title":"Monkey Business","artist":"Skid Row"},{"title":"そっけない","artist":"RADWIMPS"},{"title":"ミックスナッツ","artist":"Official髭男dism"},{"title":"Pierce","artist":"ONE OK ROCK"},{"title":"Wherever you are","artist":"ONE OK ROCK"},{"title":"Colorado Bulldog","artist":"MR. BIG"},{"title":"Daddy, Brother, Lover, Little Boy","artist":"MR. BIG"},{"title":"To Be With You","artist":"MR. BIG"},{"title":"木蘭の涙〜acoustic〜","artist":"スターダスト☆レビュー"},{"title":"I LOVE YOU","artist":"尾崎豊"},{"title":"小さな恋のうた","artist":"MONGOL800"},{"title":"ALONE","artist":"B'z"},{"title":"儚くない","artist":"SUPER BEAVER"},{"title":"One more time, One more chance","artist":"山崎まさよし"},{"title":"Get Along Together","artist":"山根康広"},{"title":"鬼ノ宴","artist":"友成空"},{"title":"3月9日","artist":"レミオロメン"},{"title":"サウダージ","artist":"ポルノグラフィティ"},{"title":"奏（かなで）","artist":"スキマスイッチ"},{"title":"カノープス","artist":"BiTE A SHOCK"},{"title":"世界が終るまでは…","artist":"WANDS"},{"title":"僕らまた","artist":"SG"},{"title":"花の名","artist":"BUMP OF CHICKEN"},{"title":"島唄","artist":"THE BOOM"},{"title":"島人ぬ宝","artist":"BEGIN"},{"title":"海の声","artist":"浦島太郎（桐谷健太）"},{"title":"恋しくて","artist":"BEGIN"},{"title":"メロディー","artist":"玉置浩二"},{"title":"歌うたいのバラッド","artist":"斉藤和義"}];</script>
+  <script src="./labels.js"></script>
+  <script src="./version.js"></script>
+  <script src="./storage.js"></script>
+  <script src="./auto-backup.js"></script>
+  <script src="./karaoke-rankings.js"></script>
+  <script src="./artist-genders.js"></script>
+  <script src="./master-cache.js"></script>
+  <script src="./karaoke-master-supplement.js"></script>
+  <script src="./karaoke-master.js"></script>
+  <script src="./search-aliases.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
