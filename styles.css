@@ -821,7 +821,7 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
 /* ── Karaoke results ── */
 .karaoke-results {
   display: grid;
-  gap: 5px;
+  gap: 8px;
   align-content: start;
   flex: 1 1 auto;
   min-height: 0;
@@ -840,17 +840,18 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
 
 .karaoke-result {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px 10px;
   align-items: start;
   width: 100%;
-  min-height: 52px;
-  padding: 8px 10px;
+  min-height: 72px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--panel);
   color: var(--text);
   text-align: left;
+  overflow: hidden;
   transition: background var(--transition), border-color var(--transition), opacity var(--transition);
 }
 .karaoke-result.addable {
@@ -898,13 +899,14 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
   font-size: 13px;
   font-weight: 800;
   text-align: center;
-  padding-top: 3px;
+  padding-top: 6px;
   letter-spacing: -.01em;
 }
 .karaoke-result-body {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 4px;
+  align-content: start;
 }
 .karaoke-result-title-row {
   display: flex;
@@ -924,12 +926,16 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
 .karaoke-result-meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
-  margin-top: 2px;
+  margin-top: 0;
 }
 .karaoke-result-meta .karaoke-anime-show,
 .karaoke-result-meta .karaoke-reason,
-.karaoke-result-meta .karaoke-list-badge { margin-top: 0; }
+.karaoke-result-meta .karaoke-list-badge {
+  margin-top: 0;
+  max-width: 100%;
+}
 
 .karaoke-result-artist {
   overflow: hidden;
@@ -1009,14 +1015,15 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
-  min-height: 44px;
-  margin-top: 2px;
+  min-height: 36px;
+  margin: 0;
   letter-spacing: .02em;
   transition: all var(--transition);
+  flex: 0 0 auto;
 }
 .karaoke-result-action.badge-add {
-  min-width: 56px;
-  padding: 8px 12px;
+  min-width: 58px;
+  padding: 7px 12px;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-ink);
@@ -1453,12 +1460,16 @@ main {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 58px;
+  align-self: stretch;
 }
 .yt-button {
-  min-width: 46px;
-  height: 22px;
-  padding: 0 6px;
+  min-width: 58px;
+  height: 32px;
+  padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel-2);
@@ -1467,6 +1478,7 @@ main {
   font-weight: 700;
   letter-spacing: .02em;
   white-space: nowrap;
+  flex: 0 0 auto;
   transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 .yt-button:hover {

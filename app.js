@@ -1733,7 +1733,7 @@
       row.className = `karaoke-result genre-${genreClass}${existing ? " registered" : " addable"}`;
 
       const animeBadge = item.animeShow
-        ? `<span class="karaoke-result-anime">${escapeText(item.animeShow)}</span>`
+        ? `<span class="karaoke-anime-show">${escapeText(item.animeShow)}</span>`
         : "";
       const reasonBadge = item.reason
         ? `<span class="karaoke-reason">${escapeText(item.reason)}</span>`
