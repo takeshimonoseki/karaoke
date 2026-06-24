@@ -495,7 +495,7 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
 }
 .search-toolbar-primary {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr;
   gap: 6px;
 }
 .search-toolbar-meta {
@@ -562,7 +562,7 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
 /* Gender bar */
 .search-gender-bar {
   display: grid;
-  grid-template-columns: auto 1fr 1fr;
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
   gap: 5px;
   align-items: center;
   min-width: 0;
@@ -840,19 +840,22 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
 
 .karaoke-result {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 8px 10px;
-  align-items: start;
+  gap: 10px;
   width: 100%;
-  min-height: 72px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--panel);
   color: var(--text);
   text-align: left;
-  overflow: hidden;
   transition: background var(--transition), border-color var(--transition), opacity var(--transition);
+}
+.karaoke-result-main {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px 10px;
+  align-items: start;
+  min-width: 0;
 }
 .karaoke-result.addable {
   border-color: rgba(110,231,183,.35);
@@ -1022,8 +1025,8 @@ main { padding: 10px 12px calc(28px + var(--safe-bottom)); }
   flex: 0 0 auto;
 }
 .karaoke-result-action.badge-add {
-  min-width: 58px;
-  padding: 7px 12px;
+  min-width: 72px;
+  padding: 7px 14px;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-ink);
@@ -1458,23 +1461,22 @@ main {
 /* ── Feature 2: YouTube button on search-result cards ── */
 .karaoke-result-action-col {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  gap: 6px;
-  flex-shrink: 0;
-  min-width: 58px;
-  align-self: stretch;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-left: 36px;
 }
 .yt-button {
-  min-width: 58px;
-  height: 32px;
-  padding: 0 8px;
+  min-width: 52px;
+  height: 36px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel-2);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .02em;
   white-space: nowrap;

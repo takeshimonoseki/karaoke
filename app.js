@@ -1747,13 +1747,15 @@
         : "";
 
       row.innerHTML = `
-        <span class="karaoke-rank">${index + 1}</span>
-        <div class="karaoke-result-body">
-          <div class="karaoke-result-title-row">
-            <span class="karaoke-result-title">${escapeText(item.title)}</span>
+        <div class="karaoke-result-main">
+          <span class="karaoke-rank">${index + 1}</span>
+          <div class="karaoke-result-body">
+            <div class="karaoke-result-title-row">
+              <span class="karaoke-result-title">${escapeText(item.title)}</span>
+            </div>
+            <button type="button" class="karaoke-result-artist">${escapeText(item.artist || "歌手名不明")}</button>
+            ${metaBadges}
           </div>
-          <button type="button" class="karaoke-result-artist">${escapeText(item.artist || "歌手名不明")}</button>
-          ${metaBadges}
         </div>
       `;
 
@@ -1802,7 +1804,7 @@
 
       const actionCol = document.createElement("div");
       actionCol.className = "karaoke-result-action-col";
-      actionCol.append(action, ytBtn);
+      actionCol.append(ytBtn, action);
 
       row.append(actionCol);
       els.globalSearchResults.append(row);
@@ -2542,7 +2544,7 @@
     if (event.target === els.menuDialog) els.menuDialog.close();
   });
 
-  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v49";
+  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v50";
 
   async function loadExtraScriptFromText(text) {
     const blob = new Blob([text], { type: "text/javascript" });
