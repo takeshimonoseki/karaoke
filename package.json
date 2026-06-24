@@ -1,0 +1,20 @@
+{
+  "name": "uta-note",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:master": "node tools/build-karaoke-master.mjs --max 80000 --from 1990 --limit 500 --minify",
+    "generate:genders": "node tools/generate-gender-hints.mjs",
+    "build:genders": "node tools/generate-gender-hints.mjs && node tools/sync-artist-genders.mjs && node tools/reapply-genders.mjs karaoke-master-extra.js --minify",
+    "retag:genres": "node tools/retag-extra-genres.mjs karaoke-master-extra.js --minify",
+    "refresh:data": "npm run retag:genres && npm run build:genders && npm run verify:data",
+    "enrich:genders": "node tools/enrich-artist-genders.mjs",
+    "verify:data": "node tools/verify-data.mjs",
+    "build:static": "node tools/build-static.mjs",
+    "deploy:pages": "node tools/build-static.mjs && npx --yes gh-pages -d dist -t true",
+    "setup:local": "node tools/setup-local-https.mjs",
+    "serve:local": "node tools/serve-local.mjs",
+    "serve": "npx --yes serve . -l 8080",
+    "serve:iphone": "node tools/serve-for-iphone.mjs"
+  }
+}
