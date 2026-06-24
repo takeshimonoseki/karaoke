@@ -2542,7 +2542,7 @@
     if (event.target === els.menuDialog) els.menuDialog.close();
   });
 
-  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v47";
+  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v49";
 
   async function loadExtraScriptFromText(text) {
     const blob = new Blob([text], { type: "text/javascript" });
@@ -2571,12 +2571,23 @@
     }
   }
 
-  async function persistExtraCache() {
-    if (window.UtaNoteMasterCache && Array.isArray(window.UTA_NOTE_MASTER_EXTRA)) {
-      await window.UtaNoteMasterCache.setCachedExtra(EXTRA_CACHE_TAG, window.UTA_NOTE_MASTER_EXTRA);
+  async function applyExtraMaster({ persist = false } = {}) {
+    if (persist && window.UtaNoteMasterCache && Array.isArray(window.UTA_NOTE_MASTER_EXTRA)) {
+      try {
+        await window.UtaNoteMasterCache.setCachedExtra(EXTRA_CACHE_TAG, window.UTA_NOTE_MASTER_EXTRA);
+      } catch (error) {
+        console.error("曲マスターのキャッシュ保存に失敗:", error);
+      }
     }
-    if (window.UtaNoteKaraokeMaster?.rebuild) window.UtaNoteKaraokeMaster.rebuild();
-    if (els.searchDialog?.open && els.globalSearch?.value?.trim()) runGlobalSearch();
+
+    setTimeout(() => {
+      try {
+        if (window.UtaNoteKaraokeMaster?.rebuild) window.UtaNoteKaraokeMaster.rebuild();
+        if (els.searchDialog?.open && els.globalSearch?.value?.trim()) runGlobalSearch();
+      } catch (error) {
+        console.error("曲マスターの再構築に失敗:", error);
+      }
+    }, 0);
   }
 
   async function lazyLoadMasterExtra() {
@@ -2585,7 +2596,7 @@
         const cached = await window.UtaNoteMasterCache.getCachedExtra(EXTRA_CACHE_TAG);
         if (Array.isArray(cached) && cached.length > 0) {
           window.UTA_NOTE_MASTER_EXTRA = cached;
-          await persistExtraCache();
+          applyExtraMaster();
           return;
         }
       } catch {
@@ -2594,14 +2605,17 @@
     }
 
     if (await loadExtraFromServiceWorkerCache()) {
-      await persistExtraCache();
+      applyExtraMaster({ persist: true });
       return;
     }
 
     const script = document.createElement("script");
     script.src = "./karaoke-master-extra.js";
     script.onload = () => {
-      persistExtraCache();
+      applyExtraMaster({ persist: true });
+    };
+    script.onerror = () => {
+      console.error("曲マスターの読み込みに失敗しました");
     };
     document.head.appendChild(script);
   }
@@ -2613,7 +2627,9 @@
   updateRecoveryBanner();
   updateAppVersionNote();
   if (window.UtaNoteAutoBackup) {
-    window.UtaNoteAutoBackup.saveSnapshot(songs, settings).then(() => updateAutoBackupUi());
+    setTimeout(() => {
+      window.UtaNoteAutoBackup.saveSnapshot(songs, settings).then(() => updateAutoBackupUi());
+    }, 2000);
   }
   setTimeout(lazyLoadMasterExtra, 0);
 })();

@@ -1,5 +1,5 @@
-const SHELL_CACHE = "uta-note-shell-v48";
-const MASTER_CACHE = "uta-note-master-v48";
+const SHELL_CACHE = "uta-note-shell-v49";
+const MASTER_CACHE = "uta-note-master-v49";
 const CACHE_NAMES = [SHELL_CACHE, MASTER_CACHE];
 
 const APP_FILES = [
@@ -22,12 +22,6 @@ const APP_FILES = [
   "./icons/icon-512.png"
 ];
 
-const MASTER_FILES = [
-  "./karaoke-master-extra.js",
-  "./karaoke-master-supplement.js",
-  "./artist-genders.js"
-];
-
 function isAppShellRequest(request) {
   if (request.method !== "GET") return false;
   const url = new URL(request.url);
@@ -36,6 +30,10 @@ function isAppShellRequest(request) {
     const normalized = new URL(path, self.location.origin);
     return url.pathname === normalized.pathname || url.href === normalized.href;
   }) || /\.(html|js|css|webmanifest|png)$/i.test(url.pathname);
+}
+
+function isMasterFile(pathname) {
+  return /karaoke-master-extra\.js$|karaoke-master-supplement\.js$/.test(pathname);
 }
 
 async function matchAnyCache(request) {
@@ -49,10 +47,7 @@ async function matchAnyCache(request) {
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(SHELL_CACHE).then((cache) => cache.addAll(APP_FILES)),
-      caches.open(MASTER_CACHE).then((cache) => cache.addAll(MASTER_FILES))
-    ])
+    caches.open(SHELL_CACHE).then((cache) => cache.addAll(APP_FILES))
   );
   self.skipWaiting();
 });
@@ -81,7 +76,7 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (response && response.ok) {
             const copy = response.clone();
-            const bucket = MASTER_FILES.some((path) => event.request.url.endsWith(path.replace("./", "")))
+            const bucket = isMasterFile(new URL(event.request.url).pathname)
               ? MASTER_CACHE
               : SHELL_CACHE;
             caches.open(bucket).then((cache) => cache.put(event.request, copy));
