@@ -53,7 +53,7 @@ npm run refresh:data    # ジャンル再タグ + 性別 + 検証
 
 `main` ブランチへ push すると GitHub Actions が自動デプロイします。
 
-初回は GitHub リポジトリの **Settings → Pages → Source: GitHub Actions** を有効にしてください。
+初回は GitHub リポジトリの **Settings → Pages → Branch: `gh-pages` / `/ (root)`** を選んでください。
 
 ## ライセンス
 
