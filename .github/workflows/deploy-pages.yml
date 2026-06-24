@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages
@@ -35,3 +37,38 @@ jobs:
           publish_dir: ./dist
           publish_branch: gh-pages
           force_orphan: true
+
+      - name: Enable GitHub Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          REPO="${{ github.repository }}"
+          API="https://api.github.com/repos/${REPO}/pages"
+          STATUS=$(curl -s -o /tmp/pages-get.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${API}")
+
+          if [ "${STATUS}" = "404" ]; then
+            echo "Creating GitHub Pages site from gh-pages branch..."
+            curl -s -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "${API}" \
+              -d '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}' \
+              | tee /tmp/pages-post.json
+          else
+            echo "Updating GitHub Pages source to gh-pages branch..."
+            curl -s -X PUT \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "${API}" \
+              -d '{"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}' \
+              | tee /tmp/pages-put.json
+          fi
+
+          echo "Pages configuration:"
+          cat /tmp/pages-get.json 2>/dev/null || true
+          cat /tmp/pages-post.json 2>/dev/null || true
+          cat /tmp/pages-put.json 2>/dev/null || true
