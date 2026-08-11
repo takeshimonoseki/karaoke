@@ -46,7 +46,9 @@
     importFile: $("importFile"),
     restoreAutoBackup: $("restoreAutoBackupButton"),
     autoBackupStatus: $("autoBackupStatus"),
+    clearCacheButton: $("clearCacheButton"),
     appVersionNote: $("appVersionNote"),
+    appPagesLink: $("appPagesLink"),
     toast: $("toast"),
     openSearch: $("openSearchButton"),
     searchDialog: $("searchDialog"),
@@ -2342,7 +2344,54 @@
   function updateAppVersionNote() {
     if (!els.appVersionNote) return;
     const version = window.UtaNoteVersion?.app || "1.0.0";
-    els.appVersionNote.textContent = `歌ノート v${version}`;
+    const cache = window.UtaNoteVersion?.cache || "";
+    els.appVersionNote.textContent = cache
+      ? `歌ノート v${version}（${cache}）`
+      : `歌ノート v${version}`;
+  }
+
+  async function clearAppCachesAndReload(options = {}) {
+    if (!options.force) {
+      if (!confirm("端末内のアプリキャッシュを消して再読み込みします。曲リスト（あなたの登録曲）は消えません。よろしいですか？")) {
+        return;
+      }
+    }
+    try {
+      if ("serviceWorker" in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration?.active) {
+          registration.active.postMessage({ type: "CLEAR_CACHES" });
+        }
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((item) => item.unregister()));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+    } catch (error) {
+      console.error("キャッシュクリアに失敗:", error);
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("reload", String(Date.now()));
+    window.location.replace(url.toString());
+  }
+
+  async function checkRemoteVersion() {
+    if (!isAppOnline()) return;
+    try {
+      const response = await fetch(`./version.js?check=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) return;
+      const text = await response.text();
+      const match = text.match(/app:\s*"([^"]+)"/);
+      const remoteApp = match?.[1];
+      const localApp = window.UtaNoteVersion?.app;
+      if (remoteApp && localApp && remoteApp !== localApp) {
+        showUpdateAvailableToast();
+      }
+    } catch {
+      // ignore offline / fetch errors
+    }
   }
 
   function exportBackup() {
@@ -2400,7 +2449,7 @@
     const reloadButton = els.toast.querySelector(".toast-reload-button");
     if (reloadButton) {
       reloadButton.addEventListener("click", () => {
-        window.location.reload();
+        clearAppCachesAndReload({ force: true });
       }, { once: true });
     }
   }
@@ -2423,11 +2472,16 @@
         showUpdateAvailableToast();
       }
 
+      registration.update().catch(() => {});
       setInterval(() => {
         registration.update().catch(() => {});
       }, 60 * 60 * 1000);
     }).catch((error) => {
       console.error("Service Worker登録失敗:", error);
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      // New SW took control; soft tip only if still on old page
     });
   }
 
@@ -2487,6 +2541,9 @@
   if (els.restoreAutoBackup) {
     els.restoreAutoBackup.addEventListener("click", restoreFromAutoBackup);
   }
+  if (els.clearCacheButton) {
+    els.clearCacheButton.addEventListener("click", clearAppCachesAndReload);
+  }
   if (els.loadSampleButton) {
     els.loadSampleButton.addEventListener("click", loadSampleSongs);
   }
@@ -2544,7 +2601,7 @@
     if (event.target === els.menuDialog) els.menuDialog.close();
   });
 
-  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v50";
+  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v51";
 
   async function loadExtraScriptFromText(text) {
     const blob = new Blob([text], { type: "text/javascript" });
@@ -2628,6 +2685,7 @@
   updateSearchGenderUi();
   updateRecoveryBanner();
   updateAppVersionNote();
+  setTimeout(checkRemoteVersion, 1500);
   if (window.UtaNoteAutoBackup) {
     setTimeout(() => {
       window.UtaNoteAutoBackup.saveSnapshot(songs, settings).then(() => updateAutoBackupUi());

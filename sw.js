@@ -1,5 +1,5 @@
-const SHELL_CACHE = "uta-note-shell-v50";
-const MASTER_CACHE = "uta-note-master-v50";
+const SHELL_CACHE = "uta-note-shell-v51";
+const MASTER_CACHE = "uta-note-master-v51";
 const CACHE_NAMES = [SHELL_CACHE, MASTER_CACHE];
 
 const APP_FILES = [
@@ -22,6 +22,20 @@ const APP_FILES = [
   "./icons/icon-512.png"
 ];
 
+const NETWORK_FIRST_PATHS = [
+  "/",
+  "/index.html",
+  "/styles.css",
+  "/app.js",
+  "/version.js",
+  "/sw.js",
+  "/manifest.webmanifest"
+];
+
+function pathnameOf(request) {
+  return new URL(request.url).pathname.replace(/\/$/, "") || "/";
+}
+
 function isAppShellRequest(request) {
   if (request.method !== "GET") return false;
   const url = new URL(request.url);
@@ -36,13 +50,52 @@ function isMasterFile(pathname) {
   return /karaoke-master-extra\.js$|karaoke-master-supplement\.js$/.test(pathname);
 }
 
+function isNetworkFirst(request) {
+  const path = pathnameOf(request);
+  const base = path.split("/").pop() || path;
+  if (NETWORK_FIRST_PATHS.some((item) => path.endsWith(item) || `/${base}` === item)) return true;
+  if (/\.(html|css)$/i.test(path)) return true;
+  if (/(^|\/)(app|version|sw)\.js$/i.test(path)) return true;
+  return false;
+}
+
 async function matchAnyCache(request) {
   for (const name of CACHE_NAMES) {
     const cache = await caches.open(name);
-    const hit = await cache.match(request);
+    const hit = await cache.match(request, { ignoreSearch: true });
     if (hit) return hit;
   }
-  return caches.match(request);
+  return caches.match(request, { ignoreSearch: true });
+}
+
+async function putInCache(request, response) {
+  if (!response || !response.ok) return;
+  const bucket = isMasterFile(new URL(request.url).pathname) ? MASTER_CACHE : SHELL_CACHE;
+  const cache = await caches.open(bucket);
+  await cache.put(request, response.clone());
+}
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    putInCache(request, response);
+    return response;
+  } catch {
+    const cached = await matchAnyCache(request);
+    return cached || matchAnyCache("./index.html");
+  }
+}
+
+async function cacheFirst(request) {
+  const cached = await matchAnyCache(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    putInCache(request, response);
+    return response;
+  } catch {
+    return matchAnyCache("./index.html");
+  }
 }
 
 self.addEventListener("install", (event) => {
@@ -61,6 +114,18 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "CLEAR_CACHES") {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).then(() => {
+        self.clients.matchAll({ type: "window" }).then((clients) => {
+          clients.forEach((client) => client.postMessage({ type: "CACHES_CLEARED" }));
+        });
+      })
+    );
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
@@ -69,21 +134,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    matchAnyCache(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            const bucket = isMasterFile(new URL(event.request.url).pathname)
-              ? MASTER_CACHE
-              : SHELL_CACHE;
-            caches.open(bucket).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => matchAnyCache("./index.html"));
-    })
-  );
+  if (isMasterFile(new URL(event.request.url).pathname)) {
+    event.respondWith(cacheFirst(event.request));
+    return;
+  }
+
+  if (isNetworkFirst(event.request)) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  event.respondWith(cacheFirst(event.request));
 });

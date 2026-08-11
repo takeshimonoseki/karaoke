@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=1.0.3">
+  <link rel="stylesheet" href="./styles.css?v=1.0.4">
 </head>
 <body>
   <header class="app-header">
@@ -221,9 +221,15 @@
       <button id="importButton" class="menu-item">バックアップを読み込む</button>
       <button id="restoreAutoBackupButton" type="button" class="menu-item" hidden>自動バックアップから復元</button>
       <p id="autoBackupStatus" class="small-note">自動バックアップ: 準備中…</p>
+      <button id="clearCacheButton" type="button" class="menu-item">キャッシュをクリアして再読み込み</button>
       <button id="loadSampleButton" type="button" class="menu-item">サンプル曲を入れる（約60曲）</button>
       <input id="importFile" type="file" accept=".json,application/json" hidden>
       <p class="small-note">データはこの端末内に保存されます。変更は自動で最大5世代まで端末内に退避します。機種変更時は「バックアップを書き出す」を使ってください。</p>
+      <p class="small-note install-guide">
+        <strong>使い方:</strong> Safari で
+        <a id="appPagesLink" href="https://takeshimonoseki.github.io/karaoke/">このURL</a>
+        を開き、共有 → ホーム画面に追加。日常利用は Safari / ホーム画面から。CursorのiPhoneアプリは開発指示用で、歌ノート本体は開きません。
+      </p>
       <p id="appVersionNote" class="small-note version-note"></p>
     </div>
   </dialog>
