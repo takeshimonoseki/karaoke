@@ -27,7 +27,7 @@ Cursor の iPhone アプリは **AIエージェント操作用** です。歌ノ
 
 1. **古いホーム画面アイコンを削除**（Cloudflare / `.local` URL のものは無効）
 2. Safari で [https://takeshimonoseki.github.io/karaoke/](https://takeshimonoseki.github.io/karaoke/) を開く
-3. 設定（•••）下部が **歌ノート v1.0.4** であることを確認
+3. 設定（•••）下部が **歌ノート v1.0.5** であることを確認
 4. 共有 → **ホーム画面に追加**
 5. 画面がおかしい・ボタンが効かないときは設定 → **キャッシュをクリアして再読み込み**
 

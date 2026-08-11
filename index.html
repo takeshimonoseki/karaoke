@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#0b1020">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,8 +13,11 @@
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=1.0.4">
+  <link rel="stylesheet" href="./styles.css?v=1.0.5">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  </noscript>
 </head>
 <body>
   <header class="app-header">
@@ -237,16 +240,16 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script>window.INITIAL_SONGS = [{"title":"ペガサス幻想","artist":"MAKE-UP"},{"title":"愛をとりもどせ!!","artist":"クリスタルキング"},{"title":"ライラック","artist":"Mrs. GREEN APPLE"},{"title":"青と夏","artist":"Mrs. GREEN APPLE"},{"title":"翼を広げて","artist":"DEEN"},{"title":"永遠をあずけてくれ","artist":"DEEN"},{"title":"瞳そらさないで","artist":"DEEN"},{"title":"このまま君だけを奪い去りたい","artist":"DEEN"},{"title":"カレンダー","artist":"川崎鷹也"},{"title":"僕と僕","artist":"川崎鷹也"},{"title":"サクラウサギ","artist":"川崎鷹也"},{"title":"君の為のキミノウタ","artist":"川崎鷹也"},{"title":"魔法の絨毯","artist":"川崎鷹也"},{"title":"READY STEADY GO","artist":"L'Arc-en-Ciel"},{"title":"カーテンコール","artist":"優里"},{"title":"レオ","artist":"優里"},{"title":"恋人じゃなくなった日","artist":"優里"},{"title":"かくれんぼ","artist":"優里"},{"title":"ベテルギウス","artist":"優里"},{"title":"ドライフラワー","artist":"優里"},{"title":"ピーターパン","artist":"優里"},{"title":"TOUGH BOY","artist":"TOM・CAT"},{"title":"Lemon","artist":"米津玄師"},{"title":"母へ","artist":"半崎美子"},{"title":"別の人の彼女になったよ","artist":"wacci"},{"title":"君がドアを閉めた後","artist":"back number"},{"title":"わたがし","artist":"back number"},{"title":"花束","artist":"back number"},{"title":"CITRUS","artist":"Da-iCE"},{"title":"離したくはない","artist":"T-BOLAN"},{"title":"Bye For Now","artist":"T-BOLAN"},{"title":"Slave to the Grind","artist":"Skid Row"},{"title":"Monkey Business","artist":"Skid Row"},{"title":"そっけない","artist":"RADWIMPS"},{"title":"ミックスナッツ","artist":"Official髭男dism"},{"title":"Pierce","artist":"ONE OK ROCK"},{"title":"Wherever you are","artist":"ONE OK ROCK"},{"title":"Colorado Bulldog","artist":"MR. BIG"},{"title":"Daddy, Brother, Lover, Little Boy","artist":"MR. BIG"},{"title":"To Be With You","artist":"MR. BIG"},{"title":"木蘭の涙〜acoustic〜","artist":"スターダスト☆レビュー"},{"title":"I LOVE YOU","artist":"尾崎豊"},{"title":"小さな恋のうた","artist":"MONGOL800"},{"title":"ALONE","artist":"B'z"},{"title":"儚くない","artist":"SUPER BEAVER"},{"title":"One more time, One more chance","artist":"山崎まさよし"},{"title":"Get Along Together","artist":"山根康広"},{"title":"鬼ノ宴","artist":"友成空"},{"title":"3月9日","artist":"レミオロメン"},{"title":"サウダージ","artist":"ポルノグラフィティ"},{"title":"奏（かなで）","artist":"スキマスイッチ"},{"title":"カノープス","artist":"BiTE A SHOCK"},{"title":"世界が終るまでは…","artist":"WANDS"},{"title":"僕らまた","artist":"SG"},{"title":"花の名","artist":"BUMP OF CHICKEN"},{"title":"島唄","artist":"THE BOOM"},{"title":"島人ぬ宝","artist":"BEGIN"},{"title":"海の声","artist":"浦島太郎（桐谷健太）"},{"title":"恋しくて","artist":"BEGIN"},{"title":"メロディー","artist":"玉置浩二"},{"title":"歌うたいのバラッド","artist":"斉藤和義"}];</script>
-  <script src="./labels.js"></script>
-  <script src="./version.js"></script>
-  <script src="./storage.js"></script>
-  <script src="./auto-backup.js"></script>
-  <script src="./karaoke-rankings.js"></script>
-  <script src="./artist-genders.js"></script>
-  <script src="./master-cache.js"></script>
-  <script src="./karaoke-master-supplement.js"></script>
-  <script src="./karaoke-master.js"></script>
-  <script src="./search-aliases.js"></script>
-  <script src="./app.js"></script>
+  <script defer src="./labels.js"></script>
+  <script defer src="./version.js"></script>
+  <script defer src="./storage.js"></script>
+  <script defer src="./auto-backup.js"></script>
+  <script defer src="./karaoke-rankings.js"></script>
+  <script defer src="./artist-genders.js"></script>
+  <script defer src="./master-cache.js"></script>
+  <script defer src="./karaoke-master-supplement.js"></script>
+  <script defer src="./karaoke-master.js"></script>
+  <script defer src="./search-aliases.js"></script>
+  <script defer src="./app.js"></script>
 </body>
 </html>
