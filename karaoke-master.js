@@ -52,10 +52,10 @@
   }
 
   function resolveGender(artist, explicit) {
+    // rebuild 時は明示性別のみ使う。unknown のファジー解決は検索フィルタ側に任せ、
+    // 8万曲マージでメインスレッドを止めない。
     if (explicit === "male" || explicit === "female" || explicit === "mixed") return explicit;
-    if (typeof window.resolveArtistGender === "function") {
-      return window.resolveArtistGender(artist);
-    }
+    if (explicit === "unknown") return "unknown";
     return "unknown";
   }
 
@@ -117,11 +117,12 @@
     ].forEach((song, index) => {
         const key = songKey(song);
         if (!song.title || !song.artist) return;
+        const incomingGender = resolveGender(song.artist, song.gender);
         const current = map.get(key) || {
           title: song.title,
           artist: song.artist,
           year: song.year || null,
-          gender: resolveGender(song.artist, song.gender),
+          gender: incomingGender,
           genres: [],
           ageGroups: [],
           score: 1,
@@ -133,21 +134,12 @@
         (Array.isArray(song.ageGroups) ? song.ageGroups : inferAgeGroupsFromYear(song.year, "forties")).forEach((ageGroup) => {
           if (!current.ageGroups.includes(ageGroup)) current.ageGroups.push(ageGroup);
         });
-        const resolvedGender = resolveGender(song.artist, song.gender);
-        if (resolvedGender !== "unknown") current.gender = resolvedGender;
-        else if (song.gender && song.gender !== "unknown") current.gender = song.gender;
+        if (incomingGender !== "unknown") current.gender = incomingGender;
         if (song.animeTitle) current.animeTitle = song.animeTitle;
         const rawScore = Number(song.score) || Math.max(1, 100 - index);
         current.score = Math.max(current.score, Math.min(rawScore, 102));
         map.set(key, current);
       });
-
-    for (const song of map.values()) {
-      if (song.gender === "unknown") {
-        const resolved = resolveGender(song.artist, song.gender);
-        if (resolved !== "unknown") song.gender = resolved;
-      }
-    }
 
     return [...map.values()].sort((a, b) =>
       b.score - a.score ||

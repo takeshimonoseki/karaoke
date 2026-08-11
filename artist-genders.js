@@ -6317,18 +6317,9 @@
   }
 
   const ARTIST_GENDERS = buildGenderMap();
+  const ARTIST_GENDER_HINTS = Object.entries(ARTIST_GENDERS);
 
-  function resolveArtistGender(artist) {
-    const raw = String(artist || "").trim();
-    if (!raw) return "unknown";
-
-    const key = normalizeArtistKey(raw);
-    if (ARTIST_GENDERS[key]) return ARTIST_GENDERS[key];
-
-    for (const [hint, gender] of Object.entries(ARTIST_GENDERS)) {
-      if (key.includes(hint) || hint.includes(key)) return gender;
-    }
-
+  function resolveArtistGenderHeuristics(raw) {
     if (/feat\.|featuring|&|×|✕|with/i.test(raw)) return "mixed";
     if (/初音ミク|鏡音リン|鏡音レン|ボーカロイド|vocaloid/i.test(raw)) return "mixed";
     if (/cv[.:：]|（cv|一同|合唱/i.test(raw)) return "mixed";
@@ -6355,8 +6346,30 @@
     if (/にじさんじ|ホロライブ|VTuber|星街|宝塚/i.test(raw)) return "mixed";
     if (/すとぷり|Stray Kids|ENHYPEN|TREASURE|BOYS/i.test(raw)) return "male";
     if (/家入レオ|阿部真央|藍井エイル|香西|星街|でんぱ/i.test(raw)) return "female";
-
     return "unknown";
+  }
+
+  function resolveArtistGenderFuzzy(key) {
+    for (let i = 0; i < ARTIST_GENDER_HINTS.length; i += 1) {
+      const [hint, gender] = ARTIST_GENDER_HINTS[i];
+      if (key.includes(hint) || hint.includes(key)) return gender;
+    }
+    return "unknown";
+  }
+
+  function resolveArtistGender(artist, options = {}) {
+    const raw = String(artist || "").trim();
+    if (!raw) return "unknown";
+
+    const key = normalizeArtistKey(raw);
+    if (ARTIST_GENDERS[key]) return ARTIST_GENDERS[key];
+
+    const heuristic = resolveArtistGenderHeuristics(raw);
+    if (heuristic !== "unknown") return heuristic;
+
+    // 完全一致優先。ファジー走査は検索フィルタ用（rebuild では fuzzy:false）。
+    if (options.fuzzy === false) return "unknown";
+    return resolveArtistGenderFuzzy(key);
   }
 
   window.UTA_NOTE_ARTIST_GENDERS = ARTIST_GENDERS;

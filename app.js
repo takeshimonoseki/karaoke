@@ -1684,6 +1684,10 @@
       if (!GENRE_FILTER_OPTIONS.some((item) => item.id === browseGenre)) browseGenre = "total";
     }
 
+    if (mode === "keyword" || mode === "foryou") {
+      ensureMasterExtraLoaded();
+    }
+
     renderBrowseFilters();
     runGlobalSearch();
   }
@@ -1700,6 +1704,9 @@
   }
 
   let lastGlobalSearchResults = [];
+  let masterExtraState = "idle"; // idle | loading | ready | error
+  let masterExtraLoadPromise = null;
+  const MASTER_EXTRA_IDLE_DELAY_MS = 3500;
 
   function renderGlobalSearchItems(results, statusSuffix = "") {
     lastGlobalSearchResults = results;
@@ -1850,6 +1857,15 @@
         return true;
       };
 
+      if (!isMasterExtraReady()) {
+        ensureMasterExtraLoaded();
+        if (renderLocalFallback("（登録済み・曲リスト準備中）")) return;
+        if (requestId !== globalSearchRequestId) return;
+        els.globalSearchStatus.textContent = "曲リストを読み込み中…";
+        els.globalSearchResults.innerHTML = "";
+        return;
+      }
+
       if (!isAppOnline()) {
         if (renderLocalFallback("（登録済み・オフライン）")) return;
         if (requestId !== globalSearchRequestId) return;
@@ -1880,6 +1896,14 @@
       return;
     }
 
+    if (browseMode === "foryou" && !isMasterExtraReady()) {
+      ensureMasterExtraLoaded();
+      els.globalSearchStatus.textContent = "曲リストを読み込み中…";
+      els.globalSearchResults.innerHTML = "";
+      lastGlobalSearchResults = [];
+      return;
+    }
+
     els.globalSearchStatus.textContent = "読み込み中…";
     els.globalSearchResults.innerHTML = "";
     lastGlobalSearchResults = [];
@@ -1903,6 +1927,7 @@
     if (prefill) {
       browseMode = "keyword";
       els.globalSearch.value = prefill;
+      ensureMasterExtraLoaded();
     } else {
       browseMode = "ranking";
       browseAge = "forties";
@@ -2601,7 +2626,18 @@
     if (event.target === els.menuDialog) els.menuDialog.close();
   });
 
-  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v51";
+  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v52";
+
+  function isMasterExtraReady() {
+    return masterExtraState === "ready";
+  }
+
+  function refreshSearchAfterMasterReady() {
+    if (!els.searchDialog?.open) return;
+    if (browseMode === "keyword" || browseMode === "foryou") {
+      runGlobalSearch();
+    }
+  }
 
   async function loadExtraScriptFromText(text) {
     const blob = new Blob([text], { type: "text/javascript" });
@@ -2630,6 +2666,27 @@
     }
   }
 
+  function rebuildMasterOffMainThreadBlock() {
+    return new Promise((resolve) => {
+      const run = () => {
+        try {
+          if (window.UtaNoteKaraokeMaster?.rebuild) window.UtaNoteKaraokeMaster.rebuild();
+          masterExtraState = "ready";
+          refreshSearchAfterMasterReady();
+        } catch (error) {
+          masterExtraState = "error";
+          console.error("曲マスターの再構築に失敗:", error);
+        }
+        resolve();
+      };
+      if (typeof requestIdleCallback === "function") {
+        requestIdleCallback(() => run(), { timeout: 1200 });
+      } else {
+        setTimeout(run, 0);
+      }
+    });
+  }
+
   async function applyExtraMaster({ persist = false } = {}) {
     if (persist && window.UtaNoteMasterCache && Array.isArray(window.UTA_NOTE_MASTER_EXTRA)) {
       try {
@@ -2639,44 +2696,75 @@
       }
     }
 
-    setTimeout(() => {
-      try {
-        if (window.UtaNoteKaraokeMaster?.rebuild) window.UtaNoteKaraokeMaster.rebuild();
-        if (els.searchDialog?.open && els.globalSearch?.value?.trim()) runGlobalSearch();
-      } catch (error) {
-        console.error("曲マスターの再構築に失敗:", error);
-      }
-    }, 0);
+    await rebuildMasterOffMainThreadBlock();
   }
 
   async function lazyLoadMasterExtra() {
-    if (window.UtaNoteMasterCache) {
+    if (masterExtraState === "ready") return;
+    if (masterExtraLoadPromise) return masterExtraLoadPromise;
+
+    masterExtraState = "loading";
+    masterExtraLoadPromise = (async () => {
       try {
-        const cached = await window.UtaNoteMasterCache.getCachedExtra(EXTRA_CACHE_TAG);
-        if (Array.isArray(cached) && cached.length > 0) {
-          window.UTA_NOTE_MASTER_EXTRA = cached;
-          applyExtraMaster();
+        if (window.UtaNoteMasterCache) {
+          try {
+            const cached = await window.UtaNoteMasterCache.getCachedExtra(EXTRA_CACHE_TAG);
+            if (Array.isArray(cached) && cached.length > 0) {
+              window.UTA_NOTE_MASTER_EXTRA = cached;
+              await applyExtraMaster();
+              return;
+            }
+          } catch {
+            // fall through
+          }
+        }
+
+        if (await loadExtraFromServiceWorkerCache()) {
+          await applyExtraMaster({ persist: true });
           return;
         }
-      } catch {
-        // fall through
+
+        await new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "./karaoke-master-extra.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("karaoke-master-extra.js load failed"));
+          document.head.appendChild(script);
+        });
+        await applyExtraMaster({ persist: true });
+      } catch (error) {
+        masterExtraState = "error";
+        console.error("曲マスターの読み込みに失敗しました", error);
+        if (els.searchDialog?.open && (browseMode === "keyword" || browseMode === "foryou")) {
+          els.globalSearchStatus.textContent = "曲リストの読み込みに失敗しました。再読み込みしてください。";
+        }
+      } finally {
+        if (masterExtraState !== "ready" && masterExtraState !== "error") {
+          masterExtraState = "error";
+        }
+        masterExtraLoadPromise = null;
       }
-    }
+    })();
 
-    if (await loadExtraFromServiceWorkerCache()) {
-      applyExtraMaster({ persist: true });
-      return;
-    }
+    return masterExtraLoadPromise;
+  }
 
-    const script = document.createElement("script");
-    script.src = "./karaoke-master-extra.js";
-    script.onload = () => {
-      applyExtraMaster({ persist: true });
+  function ensureMasterExtraLoaded() {
+    if (masterExtraState === "ready") return Promise.resolve();
+    return lazyLoadMasterExtra();
+  }
+
+  function scheduleDeferredMasterExtraLoad() {
+    const start = () => {
+      if (masterExtraState === "ready" || masterExtraState === "loading") return;
+      lazyLoadMasterExtra();
     };
-    script.onerror = () => {
-      console.error("曲マスターの読み込みに失敗しました");
-    };
-    document.head.appendChild(script);
+
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(() => start(), { timeout: MASTER_EXTRA_IDLE_DELAY_MS });
+    } else {
+      setTimeout(start, MASTER_EXTRA_IDLE_DELAY_MS);
+    }
   }
 
   registerServiceWorker();
@@ -2691,5 +2779,5 @@
       window.UtaNoteAutoBackup.saveSnapshot(songs, settings).then(() => updateAutoBackupUi());
     }, 2000);
   }
-  setTimeout(lazyLoadMasterExtra, 0);
+  scheduleDeferredMasterExtraLoad();
 })();
