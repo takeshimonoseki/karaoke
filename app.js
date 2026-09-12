@@ -76,7 +76,22 @@
     recoveryImportButton: $("recoveryImportButton"),
     loadSampleButton: $("loadSampleButton"),
     keyPickerButtons: $("keyPickerButtons"),
-    addSongFab: $("addSongFab")
+    addSongFab: $("addSongFab"),
+    dismissKeyboardButton: $("dismissKeyboardButton"),
+    recentAddsBar: $("recentAddsBar"),
+    recentAddsList: $("recentAddsList"),
+    addSuccessDialog: $("addSuccessDialog"),
+    addSuccessTitle: $("addSuccessTitle"),
+    addSuccessMeta: $("addSuccessMeta"),
+    addSuccessUndoButton: $("addSuccessUndoButton"),
+    addSuccessContinueButton: $("addSuccessContinueButton"),
+    addSuccessCloseButton: $("addSuccessCloseButton"),
+    firstRunTip: $("firstRunTip"),
+    firstRunTipClose: $("firstRunTipClose"),
+    themeModernButton: $("themeModernButton"),
+    themeClassicButton: $("themeClassicButton"),
+    fontNormalButton: $("fontNormalButton"),
+    fontLargeButton: $("fontLargeButton")
   };
 
   let songs = S.loadSongs();
@@ -687,18 +702,159 @@
     showToast(`「${song.title}」を${getListLabel(canSing)}に移しました`);
   }
 
+
+  function vibrateLight() {
+    try {
+      if (navigator.vibrate) navigator.vibrate(24);
+    } catch (_) { /* ignore */ }
+  }
+
+  function applyAppearance() {
+    const theme = settings.theme === "classic" ? "classic" : "modern";
+    const fontSize = settings.fontSize === "large" ? "large" : "normal";
+    document.body.dataset.theme = theme;
+    document.body.dataset.fontSize = fontSize;
+    document.body.classList.toggle("theme-classic", theme === "classic");
+    document.body.classList.toggle("theme-modern", theme === "modern");
+    document.body.classList.toggle("font-large", fontSize === "large");
+    if (els.themeModernButton) els.themeModernButton.classList.toggle("active", theme === "modern");
+    if (els.themeClassicButton) els.themeClassicButton.classList.toggle("active", theme === "classic");
+    if (els.fontNormalButton) els.fontNormalButton.classList.toggle("active", fontSize === "normal");
+    if (els.fontLargeButton) els.fontLargeButton.classList.toggle("active", fontSize === "large");
+  }
+
+  function setTheme(theme) {
+    settings.theme = theme === "classic" ? "classic" : "modern";
+    saveSettings();
+    applyAppearance();
+    showToast(settings.theme === "classic" ? "クラシック表示に戻しました" : "新デザインに切り替えました");
+  }
+
+  function setFontSize(size) {
+    settings.fontSize = size === "large" ? "large" : "normal";
+    saveSettings();
+    applyAppearance();
+  }
+
+  function dismissKeyboard() {
+    const active = document.activeElement;
+    if (active && typeof active.blur === "function") active.blur();
+    if (els.globalSearch) els.globalSearch.blur();
+    if (els.search) els.search.blur();
+    if (els.dismissKeyboardButton) els.dismissKeyboardButton.hidden = true;
+  }
+
+  function syncKeyboardDismissButton() {
+    if (!els.dismissKeyboardButton) return;
+    const focused = document.activeElement === els.globalSearch;
+    const hasText = Boolean(els.globalSearch && els.globalSearch.value);
+    els.dismissKeyboardButton.hidden = !(browseMode === "keyword" && (focused || hasText));
+  }
+
+  function updateOrientationClass() {
+    const landscape = window.matchMedia("(orientation: landscape)").matches
+      || window.innerWidth > window.innerHeight;
+    document.body.classList.toggle("landscape", landscape);
+  }
+
+  function renderRecentAdds() {
+    if (!els.recentAddsBar || !els.recentAddsList) return;
+    if (!recentAdds.length) {
+      els.recentAddsBar.hidden = true;
+      els.recentAddsList.innerHTML = "";
+      return;
+    }
+    els.recentAddsBar.hidden = false;
+    els.recentAddsList.innerHTML = "";
+    recentAdds.slice(0, 3).forEach((item) => {
+      const chip = document.createElement("span");
+      chip.className = "recent-add-chip";
+      chip.textContent = item.title;
+      chip.title = `${item.title} / ${item.artist}`;
+      els.recentAddsList.append(chip);
+    });
+  }
+
+  function pushRecentAdd(title, artist, listLabel) {
+    recentAdds = [{ title, artist, listLabel, at: Date.now() }, ...recentAdds].slice(0, 5);
+    renderRecentAdds();
+  }
+
+  function closeAddSuccessDialog() {
+    clearTimeout(addSuccessTimer);
+    if (els.addSuccessDialog && els.addSuccessDialog.open) {
+      els.addSuccessDialog.close();
+    }
+  }
+
+  function showAddSuccess({ title, artist, canSing, songId, already = false }) {
+    lastAddedSongId = songId || null;
+    const listLabel = getListLabel(canSing);
+    if (els.addSuccessTitle) els.addSuccessTitle.textContent = title;
+    if (els.addSuccessMeta) {
+      els.addSuccessMeta.textContent = already
+        ? `すでに「${listLabel}」に入っています · ${artist || ""}`
+        : `「${listLabel}」へ追加 · ${artist || ""}`;
+    }
+    if (els.addSuccessUndoButton) {
+      els.addSuccessUndoButton.hidden = already || !songId;
+    }
+    if (els.addSuccessDialog) {
+      if (!els.addSuccessDialog.open) els.addSuccessDialog.showModal();
+    }
+    vibrateLight();
+    clearTimeout(addSuccessTimer);
+    addSuccessTimer = setTimeout(() => closeAddSuccessDialog(), 2600);
+    showToast(already ? `登録済みです（${listLabel}）` : `追加しました（${listLabel}）`, { duration: 1800 });
+  }
+
+  function undoLastAdd() {
+    if (!lastAddedSongId) {
+      closeAddSuccessDialog();
+      return;
+    }
+    const idx = songs.findIndex((song) => song.id === lastAddedSongId);
+    if (idx >= 0) {
+      const removed = songs[idx];
+      songs.splice(idx, 1);
+      saveSongs();
+      recentAdds = recentAdds.filter((item) => item.title !== removed.title || item.artist !== removed.artist);
+      renderRecentAdds();
+      refreshGlobalSearchResults();
+      render();
+      showToast(`「${removed.title}」の追加を取り消しました`);
+    }
+    lastAddedSongId = null;
+    closeAddSuccessDialog();
+  }
+
+  function maybeShowFirstRunTip() {
+    if (settings.tipSeen) return;
+    if (!els.firstRunTip) return;
+    els.firstRunTip.hidden = false;
+  }
+
+  function dismissFirstRunTip() {
+    settings.tipSeen = true;
+    saveSettings();
+    if (els.firstRunTip) els.firstRunTip.hidden = true;
+  }
+
   function addSongFromSearch(title, artist, canSing = addTarget === "canSing") {
     const existing = findExistingSong(title, artist);
     if (existing) {
       if (existing.canSing !== canSing) {
         moveSongToList(existing.id, canSing);
+        pushRecentAdd(title, artist, getListLabel(canSing));
+        showAddSuccess({ title, artist, canSing, songId: existing.id, already: false });
       } else {
         settings.tab = canSing ? "canSing" : "cannotSing";
         saveSettings();
         render();
-        showToast(`すでに${getListLabel(canSing)}に登録済みです`);
+        showAddSuccess({ title, artist, canSing, songId: existing.id, already: true });
       }
       refreshGlobalSearchResults();
+      dismissKeyboard();
       return;
     }
 
@@ -709,7 +865,9 @@
     saveSettings();
     refreshGlobalSearchResults();
     render();
-    showToast(`「${title}」を${getListLabel(canSing)}に追加しました`);
+    pushRecentAdd(title, artist, getListLabel(canSing));
+    showAddSuccess({ title, artist, canSing, songId: newId, already: false });
+    dismissKeyboard();
   }
 
   async function fetchItunesSongs(query, attribute = null, country = "jp") {
@@ -2070,10 +2228,10 @@
         els.emptyMessage.textContent = `「${query}」は${tabLabel}にありません。`;
         els.openSearchFromEmpty.textContent = `「${query}」を検索`;
       } else if (settings.tab === "cannotSing") {
-        els.emptyMessage.textContent = "まだ歌いたい曲がありません。右下の「＋追加」から探せます。";
+        els.emptyMessage.textContent = "まだ歌いたい曲がありません。右下の緑の「＋追加」から、ひらがなでも探せます。";
         els.openSearchFromEmpty.textContent = "曲を探して追加";
       } else {
-        els.emptyMessage.textContent = `${tabLabel}がまだありません。右下の「＋追加」か上の「曲を探す」から追加できます。`;
+        els.emptyMessage.textContent = `${tabLabel}がまだ空です。右下「＋追加」か上の「曲を探す」からノートに書き込みましょう。`;
         els.openSearchFromEmpty.textContent = "曲を探して追加";
       }
     }
@@ -2088,7 +2246,7 @@
 
     rows.forEach((song, index) => {
       const card = document.createElement("article");
-      card.className = `song-card${song.id === highlightSongId ? " song-card-highlight" : ""}`;
+      card.className = `song-card ${song.canSing ? "list-can-sing" : "list-want-sing"}${song.id === highlightSongId ? " song-card-highlight" : ""}`;
       card.dataset.id = song.id;
 
       const star = document.createElement("button");
@@ -2594,6 +2752,51 @@
   if (els.addSongFab) {
     els.addSongFab.addEventListener("click", () => openSearchToAdd());
   }
+  if (els.dismissKeyboardButton) {
+    els.dismissKeyboardButton.addEventListener("click", () => dismissKeyboard());
+  }
+  if (els.globalSearch) {
+    els.globalSearch.addEventListener("focus", syncKeyboardDismissButton);
+    els.globalSearch.addEventListener("blur", () => {
+      setTimeout(syncKeyboardDismissButton, 120);
+    });
+    els.globalSearch.addEventListener("input", syncKeyboardDismissButton);
+  }
+  if (els.addSuccessContinueButton) {
+    els.addSuccessContinueButton.addEventListener("click", () => {
+      closeAddSuccessDialog();
+      if (els.globalSearch && browseMode === "keyword") els.globalSearch.focus();
+    });
+  }
+  if (els.addSuccessCloseButton) {
+    els.addSuccessCloseButton.addEventListener("click", () => closeAddSuccessDialog());
+  }
+  if (els.addSuccessUndoButton) {
+    els.addSuccessUndoButton.addEventListener("click", () => undoLastAdd());
+  }
+  if (els.addSuccessDialog) {
+    els.addSuccessDialog.addEventListener("click", (event) => {
+      if (event.target === els.addSuccessDialog) closeAddSuccessDialog();
+    });
+  }
+  if (els.themeModernButton) {
+    els.themeModernButton.addEventListener("click", () => setTheme("modern"));
+  }
+  if (els.themeClassicButton) {
+    els.themeClassicButton.addEventListener("click", () => setTheme("classic"));
+  }
+  if (els.fontNormalButton) {
+    els.fontNormalButton.addEventListener("click", () => setFontSize("normal"));
+  }
+  if (els.fontLargeButton) {
+    els.fontLargeButton.addEventListener("click", () => setFontSize("large"));
+  }
+  if (els.firstRunTipClose) {
+    els.firstRunTipClose.addEventListener("click", () => dismissFirstRunTip());
+  }
+  window.addEventListener("orientationchange", updateOrientationClass);
+  window.addEventListener("resize", updateOrientationClass);
+
   if (els.searchDialog) {
     els.searchDialog.addEventListener("close", () => setSearchChromeOpen(false));
   }
@@ -2836,5 +3039,9 @@
       window.UtaNoteAutoBackup.saveSnapshot(songs, settings).then(() => updateAutoBackupUi());
     }, 2000);
   }
+  applyAppearance();
+  updateOrientationClass();
+  maybeShowFirstRunTip();
+  renderRecentAdds();
   scheduleDeferredMasterExtraLoad();
 })();

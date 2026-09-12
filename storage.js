@@ -125,10 +125,13 @@
         sort: "manual",
         tab: "canSing",
         searchGender: "male",
+        theme: "modern",
+        fontSize: "normal",
+        tipSeen: false,
         ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}")
       };
     } catch {
-      return { sort: "manual", tab: "canSing", searchGender: "male" };
+      return { sort: "manual", tab: "canSing", searchGender: "male", theme: "modern", fontSize: "normal", tipSeen: false };
     }
   }
 
