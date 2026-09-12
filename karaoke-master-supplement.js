@@ -188,5 +188,10 @@ window.UTA_NOTE_MASTER_SUPPLEMENT = [
   { title: "糸", artist: "中島みゆき", year: 1998, gender: "female", genres: ["jpop-rock", "ballad"], ageGroups: ["30s", "40s", "50s", "60s"], score: 102, animeTitle: "" },
   { title: "地上の星", artist: "中島みゆき", year: 2000, gender: "female", genres: ["jpop-rock", "ballad"], ageGroups: ["40s", "50s", "60s"], score: 99, animeTitle: "" },
   { title: "わかれうた", artist: "中島みゆき", year: 1977, gender: "female", genres: ["jpop-rock", "ballad"], ageGroups: ["50s", "60s"], score: 98, animeTitle: "" },
-  { title: "時代", artist: "中島みゆき", year: 1975, gender: "female", genres: ["jpop-rock", "ballad"], ageGroups: ["50s", "60s"], score: 97, animeTitle: "" }
+  { title: "時代", artist: "中島みゆき", year: 1975, gender: "female", genres: ["jpop-rock", "ballad"], ageGroups: ["50s", "60s"], score: 97, animeTitle: "" },
+  { title: "SUMMER GAMES", artist: "氷室京介", year: 1989, gender: "male", genres: ["jpop-rock"], ageGroups: ["40s", "50s"], score: 108, animeTitle: "" },
+  { title: "DEAR ALGERNON", artist: "氷室京介", year: 1989, gender: "male", genres: ["jpop-rock", "ballad"], ageGroups: ["40s", "50s"], score: 104, animeTitle: "" },
+  { title: "ANGEL", artist: "氷室京介", year: 1988, gender: "male", genres: ["jpop-rock"], ageGroups: ["40s", "50s"], score: 106, animeTitle: "" },
+  { title: "LOVE & GAME", artist: "氷室京介", year: 1991, gender: "male", genres: ["jpop-rock"], ageGroups: ["40s", "50s"], score: 100, animeTitle: "" },
+  { title: "JEALOUSYを眠らせて", artist: "氷室京介", year: 1990, gender: "male", genres: ["jpop-rock", "ballad"], ageGroups: ["40s", "50s"], score: 105, animeTitle: "" },
 ];

@@ -20,11 +20,17 @@
     western: "western"
   };
 
+  function kanaToHiragana(value) {
+    return String(value || "").replace(/[\u30a1-\u30f6]/g, (ch) =>
+      String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+
   function normalizeText(value) {
-    return String(value || "")
-      .normalize("NFKC")
+    // 検索用: カタカナ→ひらがな寄せ + 記号除去（search-aliases と揃える）
+    return kanaToHiragana(String(value || "").normalize("NFKC"))
       .toLocaleLowerCase("ja")
-      .replace(/\s+/g, "");
+      .replace(/[\s\u3000._\-–—'’"`´&／/\\()+（）[\]【】]/g, "")
+      .replace(/[・･]/g, "");
   }
 
   function songKey(song) {
@@ -199,11 +205,9 @@
   function search(query, limit = 100) {
     const q = normalizeText(query);
     if (!q) return [];
-    const terms = q.split(/\s+/).filter(Boolean);
-    if (terms.length === 0) return [];
     const hits = [];
     for (let i = 0; i < master.length; i += 1) {
-      if (!terms.every((term) => searchHaystack[i].includes(term))) continue;
+      if (!searchHaystack[i].includes(q)) continue;
       hits.push(master[i]);
     }
     return hits

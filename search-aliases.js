@@ -217,7 +217,13 @@
     ["Blinding Lights", "ブラインディングライツ"],
     ["Shape of You", "シェイプオブユー"],
     ["Rolling in the Deep", "ローリングインザディープ"],
-    ["Dynamite", "ダイナマイト", "BTS Dynamite"]
+    ["Dynamite", "ダイナマイト", "BTS Dynamite"],
+    ["SUMMER GAMES", "Summer Games", "サマーゲーム", "さまーげーむ", "サマゲー", "さまげー"],
+    ["氷室京介", "ヒムロキョウスケ", "ひむろきょうすけ", "ひむろ", "ヒムロ", "Kyosuke Himuro", "HIMURO"],
+    ["DEAR ALGERNON", "ディアアルジャーノン", "でぃあるじゃーのん"],
+    ["JEALOUSYを眠らせて", "ジェロウジーを眠らせて", "ジェラスシーを眠らせて"],
+    ["LOVE & GAME", "LOVE AND GAME", "ラブアンドゲーム", "らぶあんどげーむ"],
+    ["ANGEL", "エンジェル", "えんじぇる", "氷室のエンジェル"]
   ];
 
   function kanaToHiragana(value) {
@@ -232,30 +238,120 @@
       .replace(/[・･]/g, "");
   }
 
+  // ざっくりローマ字→ひらがな（カラオケ検索用。厳密なヘボン式ではない）
+  function romajiToHiragana(input) {
+    let s = String(input || "").normalize("NFKC").toLowerCase();
+    if (!s || !/^[a-z0-9\s'\-]+$/i.test(s)) return "";
+    s = s.replace(/[\s'\-]/g, "");
+    const digraphs = [
+      ["kya","きゃ"],["kyu","きゅ"],["kyo","きょ"],
+      ["sha","しゃ"],["shu","しゅ"],["sho","しょ"],["shi","し"],
+      ["cha","ちゃ"],["chu","ちゅ"],["cho","ちょ"],["chi","ち"],
+      ["nya","にゃ"],["nyu","にゅ"],["nyo","にょ"],
+      ["hya","ひゃ"],["hyu","ひゅ"],["hyo","ひょ"],
+      ["mya","みゃ"],["myu","みゅ"],["myo","みょ"],
+      ["rya","りゃ"],["ryu","りゅ"],["ryo","りょ"],
+      ["gya","ぎゃ"],["gyu","ぎゅ"],["gyo","ぎょ"],
+      ["ja","じゃ"],["ju","じゅ"],["jo","じょ"],["ji","じ"],
+      ["bya","びゃ"],["byu","びゅ"],["byo","びょ"],
+      ["pya","ぴゃ"],["pyu","ぴゅ"],["pyo","ぴょ"],
+      ["tsu","つ"],["tsu","つ"],
+      ["fu","ふ"]
+    ];
+    const singles = [
+      ["ka","か"],["ki","き"],["ku","く"],["ke","け"],["ko","こ"],
+      ["sa","さ"],["su","す"],["se","せ"],["so","そ"],
+      ["ta","た"],["te","て"],["to","と"],
+      ["na","な"],["ni","に"],["nu","ぬ"],["ne","ね"],["no","の"],
+      ["ha","は"],["hi","ひ"],["he","へ"],["ho","ほ"],
+      ["ma","ま"],["mi","み"],["mu","む"],["me","め"],["mo","も"],
+      ["ya","や"],["yu","ゆ"],["yo","よ"],
+      ["ra","ら"],["ri","り"],["ru","る"],["re","れ"],["ro","ろ"],
+      ["wa","わ"],["wo","を"],["nn","ん"],["n","ん"],
+      ["ga","が"],["gi","ぎ"],["gu","ぐ"],["ge","げ"],["go","ご"],
+      ["za","ざ"],["zu","ず"],["ze","ぜ"],["zo","ぞ"],
+      ["da","だ"],["de","で"],["do","ど"],
+      ["ba","ば"],["bi","び"],["bu","ぶ"],["be","べ"],["bo","ぼ"],
+      ["pa","ぱ"],["pi","ぴ"],["pu","ぷ"],["pe","ぺ"],["po","ぽ"],
+      ["a","あ"],["i","い"],["u","う"],["e","え"],["o","お"]
+    ];
+    // 促音
+    s = s.replace(/([bcdfghjklmpqrstvwxyz])\1/g, "っ$1");
+    let out = "";
+    let i = 0;
+    const table = digraphs.concat(singles);
+    while (i < s.length) {
+      let matched = false;
+      for (const [roma, hira] of table) {
+        if (s.startsWith(roma, i)) {
+          out += hira;
+          i += roma.length;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        // 変換できない文字は捨てる
+        i += 1;
+      }
+    }
+    return out;
+  }
+
   function expandSearchQueryVariants(query) {
     const raw = String(query || "").trim();
     if (!raw) return [];
 
-    const base = normalizeSearchToken(raw);
     const variants = new Set([raw]);
-    if (!base) return [raw];
+    const base = normalizeSearchToken(raw);
+    if (base) variants.add(base);
+
+    const romajiHira = romajiToHiragana(raw);
+    if (romajiHira) {
+      variants.add(romajiHira);
+      variants.add(normalizeSearchToken(romajiHira));
+    }
+
+    // よくある英語単語をカナ化して当てやすくする
+    const EN_WORD_KANA = {
+      summer: "さまー", game: "げーむ", games: "げーむ", love: "らぶ", angel: "えんじぇる",
+      night: "ないと", dream: "どりーむ", heart: "はーと", time: "たいむ", girl: "がーる",
+      boy: "ぼーい", baby: "べいびー", dance: "だんす", music: "みゅーじっく",
+      christmas: "くりすます", goodbye: "ぐっどばい", hello: "はろー",
+      fantasy: "ふあんたじー", destiny: "ですてぃにー", jealousy: "じぇらしー"
+    };
+    const enWords = String(raw || "").normalize("NFKC").toLowerCase().match(/[a-z]+/g) || [];
+    if (enWords.length) {
+      const kanaWords = enWords.map((w) => EN_WORD_KANA[w] || romajiToHiragana(w) || w);
+      const joined = kanaWords.join("");
+      if (joined && joined !== enWords.join("")) {
+        variants.add(joined);
+        variants.add(normalizeSearchToken(joined));
+      }
+    }
+
+    const seeds = [...variants].map(normalizeSearchToken).filter(Boolean);
 
     GROUPS.forEach((group) => {
       const tokens = group.map(normalizeSearchToken).filter(Boolean);
       const hit = tokens.some((token) =>
-        token === base ||
-        token.includes(base) ||
-        base.includes(token) ||
-        (base.length >= 2 && token.startsWith(base))
+        seeds.some((seed) =>
+          token === seed ||
+          token.includes(seed) ||
+          seed.includes(token) ||
+          (seed.length >= 2 && token.startsWith(seed)) ||
+          (token.length >= 2 && seed.startsWith(token))
+        )
       );
       if (hit) group.forEach((name) => variants.add(name));
     });
 
-    return [...variants].filter(Boolean).slice(0, 10);
+    return [...variants].filter(Boolean).slice(0, 16);
   }
 
   window.UtaNoteSearchAliases = {
     expandSearchQueryVariants,
-    normalizeSearchToken
+    normalizeSearchToken,
+    romajiToHiragana
   };
 })();

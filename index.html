@@ -13,7 +13,7 @@
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=1.0.5">
+  <link rel="stylesheet" href="./styles.css?v=1.0.6">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -27,7 +27,7 @@
         <p id="songCount" class="count">0曲</p>
       </div>
       <div class="title-actions">
-        <button id="openSearchButton" type="button" class="mini-search-button">検索</button>
+        <button id="openSearchButton" type="button" class="mini-search-button">曲を探す</button>
         <button id="menuButton" class="icon-button" aria-label="設定">•••</button>
       </div>
     </div>
@@ -74,6 +74,11 @@
     <section id="songList" class="song-list" aria-live="polite" role="tabpanel" aria-label="曲リスト"></section>
   </main>
 
+  <button id="addSongFab" type="button" class="add-song-fab" aria-label="曲を追加">
+    <span class="add-song-fab-plus" aria-hidden="true">＋</span>
+    <span class="add-song-fab-label">追加</span>
+  </button>
+
   <dialog id="searchDialog" class="search-dialog" aria-labelledby="searchDialogTitle">
     <div class="search-dialog-inner" id="searchDialogInner">
       <header class="search-dialog-header">
@@ -114,7 +119,7 @@
         <div class="search-wrap karaoke-search" id="keywordSearchWrap" hidden>
           <span aria-hidden="true">⌕</span>
           <input id="globalSearchInput" type="search" inputmode="search"
-                 placeholder="曲名・歌手名（歌手名で曲を一覧）" autocomplete="off">
+                 placeholder="ひらがな・カタカナ・英語どれでもOK" autocomplete="off">
         </div>
         <div id="searchSuggestions" class="search-suggestions" hidden></div>
 
@@ -128,6 +133,8 @@
             <span class="browse-filter-label">並び順</span>
             <select id="browseSortSelect" class="browse-sort-select" aria-label="並び順">
               <option value="ranking">人気順</option>
+              <option value="newest">新しい順</option>
+              <option value="oldest">古い順</option>
               <option value="title">曲名順</option>
               <option value="artist">歌手名順</option>
             </select>

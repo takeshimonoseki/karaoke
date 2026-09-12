@@ -75,7 +75,8 @@
     recoveryBanner: $("recoveryBanner"),
     recoveryImportButton: $("recoveryImportButton"),
     loadSampleButton: $("loadSampleButton"),
-    keyPickerButtons: $("keyPickerButtons")
+    keyPickerButtons: $("keyPickerButtons"),
+    addSongFab: $("addSongFab")
   };
 
   let songs = S.loadSongs();
@@ -873,6 +874,11 @@
     return matchesBrowseGenre(item, genreId);
   }
 
+  function yearValue(item) {
+    const y = Number(item?.year);
+    return Number.isFinite(y) ? y : 0;
+  }
+
   function sortBrowseResults(results, order = browseSortOrder) {
     if (order === "title") {
       return [...results].sort((a, b) =>
@@ -886,7 +892,30 @@
         normalizeText(a.title).localeCompare(normalizeText(b.title), "ja")
       );
     }
-    return results;
+    if (order === "newest") {
+      return [...results].sort((a, b) =>
+        yearValue(b) - yearValue(a) ||
+        (b.popularity || 0) - (a.popularity || 0) ||
+        normalizeText(a.title).localeCompare(normalizeText(b.title), "ja")
+      );
+    }
+    if (order === "oldest") {
+      return [...results].sort((a, b) => {
+        const ay = yearValue(a);
+        const by = yearValue(b);
+        // year不明は後ろへ
+        if (!ay && by) return 1;
+        if (ay && !by) return -1;
+        return ay - by ||
+          (b.popularity || 0) - (a.popularity || 0) ||
+          normalizeText(a.title).localeCompare(normalizeText(b.title), "ja");
+      });
+    }
+    // ranking（デフォルト）: 人気 → マッチ済み順を維持
+    return [...results].sort((a, b) =>
+      (b.popularity || 0) - (a.popularity || 0) ||
+      normalizeText(a.title).localeCompare(normalizeText(b.title), "ja")
+    );
   }
 
   function updateBrowseSortUi() {
@@ -1717,7 +1746,7 @@
         ? "おすすめが見つかりませんでした。曲を増やすか、歌手の性別を切り替えて試してください。"
         : browseMode === "ranking"
           ? "この条件のカラオケ曲が見つかりませんでした。年代やジャンルを変えて試してください。"
-          : "見つかりませんでした。別のキーワードで試してください。";
+          : "見つかりませんでした。ひらがな・カタカナ・英語を変えて試すか、歌手名だけでも検索できます。";
       if (els.browseSortBar) els.browseSortBar.hidden = true;
       updateLoadMoreButton(0);
       return;
@@ -1790,7 +1819,7 @@
         });
       } else {
         action.className = "karaoke-result-action badge-add";
-        action.textContent = "＋ 追加";
+        action.textContent = "＋ 追加する";
         action.addEventListener("click", () => {
           addSongFromSearch(item.title, item.artist, addTarget === "canSing");
         });
@@ -1918,15 +1947,20 @@
     }
   }
 
-  function openSearch(prefill = "") {
+  function setSearchChromeOpen(isOpen) {
+    document.body.classList.toggle("search-open", Boolean(isOpen));
+  }
+
+  function openSearch(prefill = "", options = {}) {
+    const preferKeyword = Boolean(options.preferKeyword) || Boolean(prefill);
     addTarget = settings.tab;
     updateAddTargetUi();
     searchGender = settings.searchGender === "female" ? "female" : settings.searchGender === "male" ? "male" : "";
     updateSearchGenderUi();
 
-    if (prefill) {
+    if (preferKeyword) {
       browseMode = "keyword";
-      els.globalSearch.value = prefill;
+      els.globalSearch.value = prefill || "";
       ensureMasterExtraLoaded();
     } else {
       browseMode = "ranking";
@@ -1942,19 +1976,33 @@
     renderBrowseFilters();
     updateBrowseSortUi();
 
-    els.globalSearchStatus.textContent = prefill ? "検索中…" : "読み込み中…";
+    if (preferKeyword && !prefill) {
+      els.globalSearchStatus.textContent = "曲名・歌手名を入力（ひらがな・カタカナ・英語OK）";
+    } else {
+      els.globalSearchStatus.textContent = prefill ? "検索中…" : "読み込み中…";
+    }
     els.globalSearchResults.innerHTML = "";
     lastGlobalSearchResults = [];
     els.searchDialog.showModal();
+    setSearchChromeOpen(true);
 
     requestAnimationFrame(() => {
       if (browseMode === "keyword") els.globalSearch.focus();
-      runGlobalSearch();
+      if (!preferKeyword || prefill) runGlobalSearch();
+      else {
+        // キーワード入口は入力待ち。マスター準備中でも操作可能
+        els.globalSearchResults.innerHTML = "";
+      }
     });
+  }
+
+  function openSearchToAdd() {
+    openSearch("", { preferKeyword: true });
   }
 
   function closeSearch() {
     els.searchDialog.close();
+    setSearchChromeOpen(false);
   }
 
   function escapeText(value) {
@@ -2022,11 +2070,11 @@
         els.emptyMessage.textContent = `「${query}」は${tabLabel}にありません。`;
         els.openSearchFromEmpty.textContent = `「${query}」を検索`;
       } else if (settings.tab === "cannotSing") {
-        els.emptyMessage.textContent = "まだ歌いたい曲がありません。ランキングから追加しましょう。";
-        els.openSearchFromEmpty.textContent = "ランキングから曲を追加";
+        els.emptyMessage.textContent = "まだ歌いたい曲がありません。右下の「＋追加」から探せます。";
+        els.openSearchFromEmpty.textContent = "曲を探して追加";
       } else {
-        els.emptyMessage.textContent = `${tabLabel}がまだ登録されていません。検索から曲を追加できます。`;
-        els.openSearchFromEmpty.textContent = "検索から曲を追加";
+        els.emptyMessage.textContent = `${tabLabel}がまだありません。右下の「＋追加」か上の「曲を探す」から追加できます。`;
+        els.openSearchFromEmpty.textContent = "曲を探して追加";
       }
     }
 
@@ -2539,7 +2587,16 @@
   });
   els.random.addEventListener("click", chooseRandom);
   els.openSearch.addEventListener("click", () => openSearch(""));
-  els.openSearchFromEmpty.addEventListener("click", () => openSearch(els.search.value.trim()));
+  els.openSearchFromEmpty.addEventListener("click", () => {
+    const q = els.search.value.trim();
+    openSearch(q, { preferKeyword: true });
+  });
+  if (els.addSongFab) {
+    els.addSongFab.addEventListener("click", () => openSearchToAdd());
+  }
+  if (els.searchDialog) {
+    els.searchDialog.addEventListener("close", () => setSearchChromeOpen(false));
+  }
   els.form.addEventListener("submit", saveForm);
   els.delete.addEventListener("click", deleteCurrent);
   els.moveToCanSing.addEventListener("click", () => {
@@ -2626,7 +2683,7 @@
     if (event.target === els.menuDialog) els.menuDialog.close();
   });
 
-  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v52";
+  const EXTRA_CACHE_TAG = window.UtaNoteVersion?.extraCache || "v53";
 
   function isMasterExtraReady() {
     return masterExtraState === "ready";
