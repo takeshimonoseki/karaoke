@@ -1,5 +1,5 @@
-const SHELL_CACHE = "uta-note-shell-v53";
-const MASTER_CACHE = "uta-note-master-v53";
+const SHELL_CACHE = "uta-note-shell-v54";
+const MASTER_CACHE = "uta-note-master-v54";
 const CACHE_NAMES = [SHELL_CACHE, MASTER_CACHE];
 
 const APP_FILES = [

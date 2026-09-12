@@ -13,13 +13,13 @@
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=1.0.6">
+  <link rel="stylesheet" href="./styles.css?v=1.0.7">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   </noscript>
 </head>
-<body>
+<body class="theme-modern">
   <header class="app-header">
     <div class="title-row">
       <div>
@@ -119,9 +119,15 @@
         <div class="search-wrap karaoke-search" id="keywordSearchWrap" hidden>
           <span aria-hidden="true">⌕</span>
           <input id="globalSearchInput" type="search" inputmode="search"
-                 placeholder="ひらがな・カタカナ・英語どれでもOK" autocomplete="off">
+                 placeholder="ひらがな・カタカナ・英語どれでもOK" autocomplete="off"
+                 enterkeyhint="search">
+          <button id="dismissKeyboardButton" type="button" class="dismiss-keyboard-button" hidden>キーボードをしまう</button>
         </div>
         <div id="searchSuggestions" class="search-suggestions" hidden></div>
+        <div id="recentAddsBar" class="recent-adds-bar" hidden>
+          <span class="recent-adds-label">いま追加</span>
+          <div id="recentAddsList" class="recent-adds-list"></div>
+        </div>
 
         <div class="search-toolbar-row search-toolbar-meta">
           <div class="add-target-bar" role="group" aria-label="追加先">
@@ -227,6 +233,18 @@
         <h2 id="menuDialogTitle">設定</h2>
         <button id="closeMenuButton" type="button" class="icon-button" aria-label="閉じる">×</button>
       </div>
+      <section class="menu-prefs" aria-label="見た目と文字">
+        <p class="menu-prefs-title">見た目（いつでも戻せます）</p>
+        <div class="menu-pref-row" role="group" aria-label="デザイン">
+          <button type="button" id="themeModernButton" class="pref-chip active" data-theme="modern">新デザイン</button>
+          <button type="button" id="themeClassicButton" class="pref-chip" data-theme="classic">クラシック</button>
+        </div>
+        <div class="menu-pref-row" role="group" aria-label="文字サイズ">
+          <button type="button" id="fontNormalButton" class="pref-chip active" data-font="normal">ふつう</button>
+          <button type="button" id="fontLargeButton" class="pref-chip" data-font="large">大きめ</button>
+        </div>
+        <p class="small-note">気に入らなければ「クラシック」に戻してください。</p>
+      </section>
       <button id="exportButton" class="menu-item">バックアップを書き出す</button>
       <button id="importButton" class="menu-item">バックアップを読み込む</button>
       <button id="restoreAutoBackupButton" type="button" class="menu-item" hidden>自動バックアップから復元</button>
@@ -243,6 +261,25 @@
       <p id="appVersionNote" class="small-note version-note"></p>
     </div>
   </dialog>
+
+  <dialog id="addSuccessDialog" class="add-success-dialog" aria-labelledby="addSuccessHeading">
+    <div class="add-success-card">
+      <p class="add-success-check" aria-hidden="true">✓</p>
+      <h2 id="addSuccessHeading" class="add-success-heading">ノートに書きました</h2>
+      <p id="addSuccessTitle" class="add-success-title"></p>
+      <p id="addSuccessMeta" class="add-success-meta"></p>
+      <div class="add-success-actions">
+        <button id="addSuccessUndoButton" type="button" class="secondary-button">取り消す</button>
+        <button id="addSuccessContinueButton" type="button" class="primary-button">つづけて探す</button>
+        <button id="addSuccessCloseButton" type="button" class="secondary-button">閉じる</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="firstRunTip" class="first-run-tip" hidden>
+    <p>右下の <strong>＋追加</strong> から曲を探せます。紙のノートより早く、探しやすいようにしてあります。</p>
+    <button id="firstRunTipClose" type="button" class="primary-button">わかった</button>
+  </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 

@@ -2,8 +2,8 @@
   "use strict";
 
   window.UtaNoteVersion = {
-    app: "1.0.6",
-    cache: "v53",
-    extraCache: "v53"
+    app: "1.0.7",
+    cache: "v54",
+    extraCache: "v54"
   };
 })();
