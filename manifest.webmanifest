@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "歌ノート",
+  "short_name": "歌ノート",
+  "description": "歌える曲・歌いたい曲を管理し、いつ歌ったかを記録できる個人用ノート",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080c16",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
